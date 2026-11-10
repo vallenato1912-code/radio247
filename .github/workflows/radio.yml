@@ -1,0 +1,13 @@
+name: RADIO 24-7
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+jobs:
+  radio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - run: |
+          sudo apt install ffmpeg -y
+          ffmpeg -re -i https://ny1.radio.primcast.com/8342/stream -f lavfi -i color=c=red:s=1280x720:r=30 -vf "drawtext=text='RADIO CARDINAL 730 AM':fontcolor=white:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2" -c:v libx264 -preset ultrafast -b:v 1500k -c:a aac -b:a 128k -f flv rtmp://a.rtmp.youtube.com/live2/qp7m-rdt6-eyka-0hv2-fd7e
