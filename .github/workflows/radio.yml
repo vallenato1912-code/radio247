@@ -1,13 +1,32 @@
-name: RADIO 24-7
+name: RADIO 24-7 PRO
+
 on:
   schedule:
     - cron: '0 */3 * * *'
   workflow_dispatch:
+
 jobs:
   radio:
     runs-on: ubuntu-latest
     timeout-minutes: 350
     steps:
+      - uses: actions/checkout@v4
+      
       - run: |
-          sudo apt install ffmpeg -y
-          ffmpeg -re -i https://ny1.radio.primcast.com/8342/stream -f lavfi -i color=c=red:s=1280x720:r=30 -vf "drawtext=text='RADIO CARDINAL 730 AM':fontcolor=white:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2" -c:v libx264 -preset ultrafast -b:v 1500k -c:a aac -b:a 128k -f flv rtmp://a.rtmp.youtube.com/live2/qp7m-rdt6-eyka-0hv2-fd7e
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+          fc-cache -f
+
+      - run: |
+          ffmpeg -re -stream_loop -1 -i https://mg1.radio.princast.com/8342/stream \
+          -f lavfi -i color=c=0x101020:s=1280x720:r=30:d=999999 \
+          -filter_complex "\
+          [0:a]asplit=3[a1][a2][a3]; \
+          [a1]showcqt=s=1280x300:fps=30:count=1:bar_g=8:sono_g=4:bar_v=2:tc=0.4:cscheme=1|0.5|0.5|0|0.5|1|0.5|1|0.5|0.5|1,format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(gt(Y,H-60),0,alpha(X,Y))'[eq]; \
+          [1][eq]overlay=(W-w)/2:120:format=rgb,drawbox=x=0:y=0:w=1280:h=80:color=0x1a1a2e:t=fill,drawbox=x=0:y=640:w=1280:h=80:color=0x1a1a2e:t=fill[bg]; \
+          [bg]drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='RADIO 24/7':fontcolor=#FF2E63:fontsize=40:x=20:y=15,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='ABC CARDINAL':fontcolor=white:fontsize=28:x=250:y=20,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='● EN VIVO':fontcolor=red:fontsize=26:x=1050:y=22:enable='lt(mod(t,1),0.8)',drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='100% VALLENATO - MUSICA SIN PARAR':fontcolor=white@0.9:fontsize=22:x=(w-text_w)/2:y=650:box=1:boxcolor=black@0.5:boxborderw=8,drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf:text='La mejor radio online':fontcolor=#08D9D6:fontsize=18:x=(w-text_w)/2:y=25 \
+          [outv]" \
+          -map "[outv]" -map "[a2]" \
+          -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -r 30 -g 60 \
+          -c:a aac -b:a 128k -ar 44100 \
+          -f flv ${{ secrets.YOUTUBE_RTMP }}
