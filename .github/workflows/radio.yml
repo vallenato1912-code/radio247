@@ -29,4 +29,5 @@ jobs:
           -map "[outv]" -map "[a2]" \
           -c:v libx264 -preset veryfast -b:v 3000k -maxrate 3000k -bufsize 6000k -r 30 -g 60 \
           -c:a aac -b:a 128k -ar 44100 \
-          -f flv ${{ secrets.YOUTUBE_RTMP }}
+          -f flv ${{ rtmp://a.rtmp.youtube.com/live2/qp7m-rdt6-eyka-0hv2-fd7e
+ }}
